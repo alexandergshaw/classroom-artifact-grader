@@ -38,12 +38,9 @@ def _iter_py_files(directory: Path) -> list[Path]:
     return sorted([p for p in directory.glob("*.py") if p.name != "__init__.py"])
 
 
-def load_assignment_plugins(assignment_dir: str | Path) -> PluginBundle:
-    assignment_path = Path(assignment_dir)
-    bundle = PluginBundle()
-
-    checks_dir = assignment_path / "checks"
-    for file in _iter_py_files(checks_dir):
+def _safe_load_checks(file: Path, bundle: PluginBundle) -> None:
+    """Load check handlers from *file*, isolating any failure."""
+    try:
         module = _load_module(file)
         if hasattr(module, "register_checks"):
             registered = module.register_checks()
@@ -55,18 +52,45 @@ def load_assignment_plugins(assignment_dir: str | Path) -> PluginBundle:
                     func = getattr(module, attr_name)
                     if callable(func):
                         bundle.check_handlers[check_type] = func
+    except Exception:
+        logger.exception("Plugin check module failed to load, skipping: %s", file)
 
-    validators_dir = assignment_path / "validators"
-    for file in _iter_py_files(validators_dir):
+
+def _safe_load_validators(file: Path, bundle: PluginBundle) -> None:
+    """Load validators from *file*, isolating any failure."""
+    try:
         module = _load_module(file)
         if hasattr(module, "register_validators"):
             bundle.validators.extend(module.register_validators())
+    except Exception:
+        logger.exception("Plugin validator module failed to load, skipping: %s", file)
 
-    feedback_dir = assignment_path / "feedback"
-    for file in _iter_py_files(feedback_dir):
+
+def _safe_load_feedback(file: Path, bundle: PluginBundle) -> None:
+    """Load feedback hooks from *file*, isolating any failure."""
+    try:
         module = _load_module(file)
         if hasattr(module, "register_feedback"):
             bundle.feedback_hooks.extend(module.register_feedback())
+    except Exception:
+        logger.exception("Plugin feedback module failed to load, skipping: %s", file)
+
+
+def load_assignment_plugins(assignment_dir: str | Path) -> PluginBundle:
+    assignment_path = Path(assignment_dir)
+    bundle = PluginBundle()
+
+    checks_dir = assignment_path / "checks"
+    for file in _iter_py_files(checks_dir):
+        _safe_load_checks(file, bundle)
+
+    validators_dir = assignment_path / "validators"
+    for file in _iter_py_files(validators_dir):
+        _safe_load_validators(file, bundle)
+
+    feedback_dir = assignment_path / "feedback"
+    for file in _iter_py_files(feedback_dir):
+        _safe_load_feedback(file, bundle)
 
     logger.info(
         "Loaded assignment plugins: %s checks, %s validators, %s feedback hooks",
