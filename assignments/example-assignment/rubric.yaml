@@ -1,0 +1,13 @@
+assignment_id: example-plugin-assignment
+points_possible: 20
+submission_types:
+  - txt
+checks:
+  - id: has_required_phrase
+    type: text_contains
+    text: deterministic grading
+    points: 10
+  - id: custom_plugin_check
+    type: contains_student_name
+    name: alex
+    points: 10
