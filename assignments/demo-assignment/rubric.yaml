@@ -1,0 +1,38 @@
+assignment_id: demo-assignment
+points_possible: 100
+submission_types:
+  - docx
+  - txt
+checks:
+  - id: min_word_count
+    type: word_count
+    min: 500
+    points: 15
+
+  - id: has_introduction_heading
+    type: heading_exists
+    heading: Introduction
+    points: 15
+
+  - id: has_reflection_heading
+    type: heading_exists
+    heading: Reflection
+    points: 15
+
+  - id: required_database_terms
+    type: required_terms
+    terms:
+      - database
+      - primary key
+      - foreign key
+      - normalization
+    points: 20
+
+  - id: has_citations
+    type: citation_count
+    min: 2
+    points: 5
+
+  - id: instructor_manual_review
+    type: manual
+    points: 30

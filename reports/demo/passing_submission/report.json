@@ -1,0 +1,102 @@
+{
+  "assignment_id": "demo-assignment",
+  "submission_path": "/tmp/workspace/alexandergshaw/classroom-artifact-grader/submissions/passing_submission.docx",
+  "total_score": 45.0,
+  "points_possible": 100.0,
+  "passed_checks": [
+    {
+      "id": "min_word_count",
+      "type": "word_count",
+      "passed": true,
+      "earned_points": 15.0,
+      "possible_points": 15.0,
+      "feedback": "Word count requirement met.",
+      "evidence": {
+        "count": 570,
+        "min": 500
+      },
+      "manual_review": false
+    },
+    {
+      "id": "has_introduction_heading",
+      "type": "heading_exists",
+      "passed": true,
+      "earned_points": 15.0,
+      "possible_points": 15.0,
+      "feedback": "Heading found.",
+      "evidence": {
+        "expected": "Introduction",
+        "headings": [
+          "Introduction",
+          "Reflection"
+        ]
+      },
+      "manual_review": false
+    },
+    {
+      "id": "has_reflection_heading",
+      "type": "heading_exists",
+      "passed": true,
+      "earned_points": 15.0,
+      "possible_points": 15.0,
+      "feedback": "Heading found.",
+      "evidence": {
+        "expected": "Reflection",
+        "headings": [
+          "Introduction",
+          "Reflection"
+        ]
+      },
+      "manual_review": false
+    }
+  ],
+  "failed_checks": [
+    {
+      "id": "required_database_terms",
+      "type": "required_terms",
+      "passed": false,
+      "earned_points": 0.0,
+      "possible_points": 20.0,
+      "feedback": "Missing terms: foreign key, normalization",
+      "evidence": {
+        "missing": [
+          "foreign key",
+          "normalization"
+        ],
+        "terms": [
+          "database",
+          "primary key",
+          "foreign key",
+          "normalization"
+        ]
+      },
+      "manual_review": false
+    },
+    {
+      "id": "has_citations",
+      "type": "citation_count",
+      "passed": false,
+      "earned_points": 0.0,
+      "possible_points": 5.0,
+      "feedback": "Expected at least 2 citations, found 0.",
+      "evidence": {
+        "count": 0,
+        "min": 2
+      },
+      "manual_review": false
+    }
+  ],
+  "manual_review_items": [
+    {
+      "id": "instructor_manual_review",
+      "type": "manual",
+      "passed": false,
+      "earned_points": 0.0,
+      "possible_points": 30.0,
+      "feedback": "Manual review required.",
+      "evidence": null,
+      "manual_review": true
+    }
+  ],
+  "instructor_notes": ""
+}
