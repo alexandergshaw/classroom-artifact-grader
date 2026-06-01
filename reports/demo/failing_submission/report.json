@@ -1,0 +1,97 @@
+{
+  "assignment_id": "demo-assignment",
+  "submission_path": "/tmp/workspace/alexandergshaw/classroom-artifact-grader/submissions/failing_submission.docx",
+  "total_score": 5.0,
+  "points_possible": 100.0,
+  "passed_checks": [
+    {
+      "id": "has_citations",
+      "type": "citation_count",
+      "passed": true,
+      "earned_points": 5.0,
+      "possible_points": 5.0,
+      "feedback": "Citation count requirement met.",
+      "evidence": {
+        "count": 2,
+        "min": 2
+      },
+      "manual_review": false
+    }
+  ],
+  "failed_checks": [
+    {
+      "id": "min_word_count",
+      "type": "word_count",
+      "passed": false,
+      "earned_points": 0.0,
+      "possible_points": 15.0,
+      "feedback": "Expected at least 500 words, found 73.",
+      "evidence": {
+        "count": 73,
+        "min": 500
+      },
+      "manual_review": false
+    },
+    {
+      "id": "has_introduction_heading",
+      "type": "heading_exists",
+      "passed": false,
+      "earned_points": 0.0,
+      "possible_points": 15.0,
+      "feedback": "Heading not found: Introduction",
+      "evidence": {
+        "expected": "Introduction",
+        "headings": []
+      },
+      "manual_review": false
+    },
+    {
+      "id": "has_reflection_heading",
+      "type": "heading_exists",
+      "passed": false,
+      "earned_points": 0.0,
+      "possible_points": 15.0,
+      "feedback": "Heading not found: Reflection",
+      "evidence": {
+        "expected": "Reflection",
+        "headings": []
+      },
+      "manual_review": false
+    },
+    {
+      "id": "required_database_terms",
+      "type": "required_terms",
+      "passed": false,
+      "earned_points": 0.0,
+      "possible_points": 20.0,
+      "feedback": "Missing terms: primary key, foreign key, normalization",
+      "evidence": {
+        "missing": [
+          "primary key",
+          "foreign key",
+          "normalization"
+        ],
+        "terms": [
+          "database",
+          "primary key",
+          "foreign key",
+          "normalization"
+        ]
+      },
+      "manual_review": false
+    }
+  ],
+  "manual_review_items": [
+    {
+      "id": "instructor_manual_review",
+      "type": "manual",
+      "passed": false,
+      "earned_points": 0.0,
+      "possible_points": 30.0,
+      "feedback": "Manual review required.",
+      "evidence": null,
+      "manual_review": true
+    }
+  ],
+  "instructor_notes": ""
+}

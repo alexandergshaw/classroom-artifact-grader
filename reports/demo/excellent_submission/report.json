@@ -1,0 +1,102 @@
+{
+  "assignment_id": "demo-assignment",
+  "submission_path": "/tmp/workspace/alexandergshaw/classroom-artifact-grader/submissions/excellent_submission.docx",
+  "total_score": 70.0,
+  "points_possible": 100.0,
+  "passed_checks": [
+    {
+      "id": "min_word_count",
+      "type": "word_count",
+      "passed": true,
+      "earned_points": 15.0,
+      "possible_points": 15.0,
+      "feedback": "Word count requirement met.",
+      "evidence": {
+        "count": 733,
+        "min": 500
+      },
+      "manual_review": false
+    },
+    {
+      "id": "has_introduction_heading",
+      "type": "heading_exists",
+      "passed": true,
+      "earned_points": 15.0,
+      "possible_points": 15.0,
+      "feedback": "Heading found.",
+      "evidence": {
+        "expected": "Introduction",
+        "headings": [
+          "Introduction",
+          "Normalization and Key Design",
+          "Practical Considerations",
+          "Reflection"
+        ]
+      },
+      "manual_review": false
+    },
+    {
+      "id": "has_reflection_heading",
+      "type": "heading_exists",
+      "passed": true,
+      "earned_points": 15.0,
+      "possible_points": 15.0,
+      "feedback": "Heading found.",
+      "evidence": {
+        "expected": "Reflection",
+        "headings": [
+          "Introduction",
+          "Normalization and Key Design",
+          "Practical Considerations",
+          "Reflection"
+        ]
+      },
+      "manual_review": false
+    },
+    {
+      "id": "required_database_terms",
+      "type": "required_terms",
+      "passed": true,
+      "earned_points": 20.0,
+      "possible_points": 20.0,
+      "feedback": "All required terms found.",
+      "evidence": {
+        "missing": [],
+        "terms": [
+          "database",
+          "primary key",
+          "foreign key",
+          "normalization"
+        ]
+      },
+      "manual_review": false
+    },
+    {
+      "id": "has_citations",
+      "type": "citation_count",
+      "passed": true,
+      "earned_points": 5.0,
+      "possible_points": 5.0,
+      "feedback": "Citation count requirement met.",
+      "evidence": {
+        "count": 4,
+        "min": 2
+      },
+      "manual_review": false
+    }
+  ],
+  "failed_checks": [],
+  "manual_review_items": [
+    {
+      "id": "instructor_manual_review",
+      "type": "manual",
+      "passed": false,
+      "earned_points": 0.0,
+      "possible_points": 30.0,
+      "feedback": "Manual review required.",
+      "evidence": null,
+      "manual_review": true
+    }
+  ],
+  "instructor_notes": ""
+}
