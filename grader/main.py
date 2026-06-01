@@ -14,6 +14,7 @@ from grader.extractors.text_extractor import extract_text
 from grader.extractors.url_extractor import extract_url
 from grader.extractors.xlsx_extractor import extract_xlsx
 from grader.extractors.zip_extractor import extract_zip
+from grader.feedback_engine import FeedbackEngine
 from grader.models import Check, CheckResult, GradeReport
 from grader.plugin_loader import load_assignment_plugins
 from grader.report_generator import write_report
@@ -93,12 +94,26 @@ def _run_core_check(check: Check, context: dict) -> CheckResult:
     raise ValueError(f"Unknown check type: {check.type}")
 
 
+def _run_check_safe(check: Check, context: dict, plugins) -> CheckResult | None:
+    """Run a single check, catching and logging any exception."""
+    try:
+        if check.type in plugins.check_handlers:
+            return plugins.check_handlers[check.type](check, context)
+        return _run_core_check(check, context)
+    except Exception:
+        logger.exception("Check '%s' (type=%s) raised an exception, skipping.", check.id, check.type)
+        return None
+
+
 def build_report(assignment: str, submission: str, output_dir: str) -> GradeReport:
     assignment_path = Path(assignment)
     rubric = load_rubric(assignment_path)
     plugins = load_assignment_plugins(assignment_path)
     for validator in plugins.validators:
-        validator(rubric)
+        try:
+            validator(rubric)
+        except Exception:
+            logger.exception("Validator raised an exception, skipping.")
 
     submission_type = _submission_type(submission)
     if rubric.submission_types and submission_type not in {s.lower() for s in rubric.submission_types}:
@@ -109,15 +124,16 @@ def build_report(assignment: str, submission: str, output_dir: str) -> GradeRepo
         context = {"text": text, "headings": headings, "base_path": base_path, "submission": submission}
         results: list[CheckResult] = []
         for check in rubric.checks:
-            if check.type in plugins.check_handlers:
-                result = plugins.check_handlers[check.type](check, context)
-            else:
-                result = _run_core_check(check, context)
-            results.append(result)
+            result = _run_check_safe(check, context, plugins)
+            if result is not None:
+                results.append(result)
 
         manual_items = [r for r in results if r.manual_review]
         passed_checks = [r for r in results if r.passed and not r.manual_review]
         failed_checks = [r for r in results if not r.passed and not r.manual_review]
+
+        feedback_engine = FeedbackEngine(assignment_path)
+        feedback_messages = feedback_engine.generate(failed_checks)
 
         report = GradeReport(
             assignment_id=rubric.assignment_id,
@@ -127,11 +143,15 @@ def build_report(assignment: str, submission: str, output_dir: str) -> GradeRepo
             passed_checks=passed_checks,
             failed_checks=failed_checks,
             manual_review_items=manual_items,
+            feedback=feedback_messages,
             instructor_notes="",
         )
 
         for hook in plugins.feedback_hooks:
-            hook(report)
+            try:
+                hook(report)
+            except Exception:
+                logger.exception("Feedback hook raised an exception, skipping.")
 
         write_report(report, output_dir, Path("templates/report_template.md"))
         return report
@@ -143,12 +163,19 @@ def build_report(assignment: str, submission: str, output_dir: str) -> GradeRepo
 def main() -> None:
     parser = argparse.ArgumentParser(description="Rubric-driven classroom artifact grader")
     parser.add_argument("--assignment", required=True, help="Path to assignment directory containing rubric.yaml")
-    parser.add_argument("--submission", required=True, help="Path or URL for submission")
+    sub_group = parser.add_mutually_exclusive_group(required=True)
+    sub_group.add_argument("--submission", help="Path or URL for a single submission")
+    sub_group.add_argument("--submission-dir", help="Directory containing submissions to grade in batch")
     parser.add_argument("--output-dir", default="reports", help="Directory to write report outputs")
     args = parser.parse_args()
 
-    report = build_report(args.assignment, args.submission, args.output_dir)
-    logger.info("Grading complete: %.2f / %.2f", report.total_score, report.points_possible)
+    if args.submission:
+        report = build_report(args.assignment, args.submission, args.output_dir)
+        logger.info("Grading complete: %.2f / %.2f", report.total_score, report.points_possible)
+    else:
+        from grader.batch_grader import run_batch
+
+        run_batch(args.assignment, args.submission_dir, args.output_dir)
 
 
 if __name__ == "__main__":

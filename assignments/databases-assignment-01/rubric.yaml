@@ -1,0 +1,39 @@
+assignment_id: databases-assignment-01
+points_possible: 100
+submission_types:
+  - pdf
+  - docx
+  - txt
+
+checks:
+  - id: min_word_count
+    type: word_count
+    min: 400
+    points: 15
+
+  - id: required_db_terms
+    type: required_terms
+    terms:
+      - normalization
+      - primary key
+      - foreign key
+      - relationship
+    points: 20
+
+  - id: has_introduction
+    type: heading_exists
+    heading: Introduction
+    points: 10
+
+  - id: has_citations
+    type: citation_count
+    min: 2
+    points: 10
+
+  - id: erd_mentioned
+    type: erd_mentioned
+    points: 15
+
+  - id: reflection_quality
+    type: manual
+    points: 30

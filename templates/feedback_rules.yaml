@@ -1,0 +1,29 @@
+# feedback_rules.yaml – Default feedback messages for each built-in check type.
+#
+# Each key is a check `type` value.  The `fail` message is shown when the check
+# fails.  Assignment-specific overrides can be placed at:
+#   assignments/<assignment-id>/feedback/feedback_rules.yaml
+
+word_count:
+  fail: "Submission does not meet the minimum word count requirement."
+
+citation_count:
+  fail: "Additional citations are required to support your claims."
+
+required_terms:
+  fail: "One or more required terms or concepts are missing from the submission."
+
+heading_exists:
+  fail: "A required section heading was not found in the submission."
+
+regex_contains:
+  fail: "The submission does not match the required format or pattern."
+
+text_contains:
+  fail: "Required text content is missing from the submission."
+
+file_exists:
+  fail: "A required file was not found in the submission."
+
+folder_exists:
+  fail: "A required folder was not found in the submission."

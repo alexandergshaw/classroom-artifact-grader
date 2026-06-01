@@ -39,4 +39,5 @@ class GradeReport(BaseModel):
     passed_checks: list[CheckResult]
     failed_checks: list[CheckResult]
     manual_review_items: list[CheckResult]
+    feedback: list[str] = Field(default_factory=list)
     instructor_notes: str = ""

@@ -10,6 +10,9 @@ Total Score: {{total_score}} / {{points_possible}}
 ## Failed checks
 {{failed_checks}}
 
+## Feedback
+{{feedback}}
+
 ## Manual review items
 {{manual_review_items}}
 

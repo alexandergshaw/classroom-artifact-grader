@@ -18,19 +18,16 @@ pip install -r requirements.txt
 - `grader/extractors/`: artifact-type extraction modules
 - `grader/checks/`: deterministic check implementations
 - `grader/plugin_loader.py`: assignment-specific plugin loading
-- `grader/report_generator.py`: JSON + Markdown report output
+- `grader/feedback_engine.py`: deterministic feedback generation from failed checks
+- `grader/batch_grader.py`: production batch grading for entire submission directories
+- `grader/report_generator.py`: JSON + Markdown + review form report output
 
 ## Supported file types
 
-Current:
 - ZIP
 - TXT
 - PDF
 - DOCX
-
-Future-ready placeholders:
-- GitHub repository URLs
-- Website URLs
 - PPTX
 - XLSX
 
@@ -56,60 +53,275 @@ assignments/<assignment-id>/rubric.yaml
 
 ## Running the grader
 
+### Single submission
+
 ```bash
 python -m grader.main \
   --assignment assignments/example-assignment \
   --submission /absolute/path/to/submission.txt
 ```
 
-Outputs:
+Outputs per-submission:
 
 - `reports/report.json`
 - `reports/report.md`
+- `reports/review_form.md`
 
-## Interpreting reports
+### Batch grading (entire class)
 
-Reports include:
-- assignment + submission metadata
-- total score and points possible
-- passed checks
-- failed checks
-- manual review items
-- instructor notes section
-
-## Assignment-specific plugins
-
-Each assignment may optionally include:
-
-```text
-assignments/<assignment-id>/
-  checks/
-  feedback/
-  validators/
+```bash
+python -m grader.main \
+  --assignment assignments/databases-assignment-01 \
+  --submission-dir path/to/student/submissions \
+  --output-dir reports
 ```
 
-- `checks/`: custom check handlers (e.g. `contains_student_name`)
-- `validators/`: rubric validation hooks
-- `feedback/`: report post-processing hooks
+Outputs:
 
-See `assignments/example-assignment` for a working plugin example.
+```
+reports/
+└── databases-assignment-01/
+    ├── student1/
+    │   ├── report.json
+    │   ├── report.md
+    │   └── review_form.md
+    ├── student2/
+    │   └── ...
+    ├── gradebook.csv
+    ├── summary.json
+    └── instructor_summary.md
+```
+
+## Plugin Architecture
+
+Each assignment can define custom grading logic in its own directory without
+modifying the core engine.
+
+### Directory layout
+
+```text
+assignments/
+└── databases-assignment-01/
+    ├── rubric.yaml
+    ├── checks/
+    │   ├── __init__.py
+    │   └── custom_checks.py     ← custom check handlers
+    ├── validators/
+    │   └── custom_validators.py ← rubric validation hooks
+    └── feedback/
+        ├── feedback_hooks.py    ← post-grading report hooks
+        └── feedback_rules.yaml  ← feedback message overrides
+```
+
+### Registering custom checks
+
+```python
+# assignments/my-assignment/checks/custom_checks.py
+from grader.models import Check, CheckResult
+
+def check_my_custom_type(check: Check, context: dict) -> CheckResult:
+    passed = "magic word" in context["text"].lower()
+    return CheckResult(
+        id=check.id, type=check.type,
+        passed=passed,
+        earned_points=check.points if passed else 0,
+        possible_points=check.points,
+        feedback="Found." if passed else "Not found.",
+    )
+
+def register_checks() -> dict:
+    return {"my_custom_type": check_my_custom_type}
+```
+
+Then reference it in `rubric.yaml`:
+
+```yaml
+checks:
+  - id: my_check
+    type: my_custom_type
+    points: 10
+```
+
+### Registering custom validators
+
+```python
+# assignments/my-assignment/validators/custom_validators.py
+from grader.models import Rubric
+
+def validate_something(rubric: Rubric) -> None:
+    if rubric.points_possible < 10:
+        raise ValueError("Rubric must have at least 10 points.")
+
+def register_validators() -> list:
+    return [validate_something]
+```
+
+### Registering feedback hooks
+
+```python
+# assignments/my-assignment/feedback/feedback_hooks.py
+from grader.models import GradeReport
+
+def add_custom_note(report: GradeReport) -> None:
+    if not report.instructor_notes:
+        report.instructor_notes = "Review before releasing grades."
+
+def register_feedback() -> list:
+    return [add_custom_note]
+```
+
+### Plugin failure isolation
+
+If any plugin module fails to import or raises at runtime, the error is logged
+and grading continues with all other checks.  A single broken plugin never
+aborts an entire batch run.
+
+## Feedback Rules
+
+The feedback engine generates human-readable messages from failed checks using
+a YAML rules file.
+
+### Default rules
+
+`templates/feedback_rules.yaml` maps each built-in check type to a failure
+message:
+
+```yaml
+word_count:
+  fail: "Submission does not meet the minimum word count requirement."
+
+citation_count:
+  fail: "Additional citations are required to support your claims."
+```
+
+### Assignment-specific overrides
+
+Place `feedback_rules.yaml` inside the assignment's `feedback/` directory to
+override the default messages for specific check types:
+
+```yaml
+# assignments/databases-assignment-01/feedback/feedback_rules.yaml
+erd_mentioned:
+  fail: "Your submission should include a discussion of an Entity-Relationship Diagram (ERD)."
+```
+
+Feedback messages are deduplicated: if multiple failed checks map to the same
+message, it appears only once in the report.
+
+## Instructor Review Process
+
+Every graded submission gets a `review_form.md` alongside `report.json` and
+`report.md`.
+
+### review_form.md structure
+
+- **Auto Score Summary** – automated score vs. points possible
+- **Rubric Breakdown** – passed and failed checks with evidence
+- **Automated Feedback** – deduplicated feedback from the feedback engine
+- **Manual Review Sections** – one section per manual check with a space to
+  enter points awarded and notes
+- **Instructor Notes** – instructor-populated field
+- **Final Score** – template for entering the final grade
+
+### Workflow
+
+1. Run the grader (single or batch)
+2. Open `review_form.md` for each submission
+3. Fill in the manual review sections and instructor notes
+4. Record the final score
+
+## Report Structure
+
+### report.json
+
+```json
+{
+  "assignment_id": "databases-assignment-01",
+  "submission_path": "submissions/student1.docx",
+  "total_score": 55.0,
+  "points_possible": 100.0,
+  "passed_checks": [...],
+  "failed_checks": [...],
+  "manual_review_items": [...],
+  "feedback": ["Additional citations are required."],
+  "instructor_notes": ""
+}
+```
+
+### gradebook.csv
+
+One row per submission with columns:
+
+| Column | Description |
+|---|---|
+| `submission_name` | Filename |
+| `assignment_id` | Assignment identifier |
+| `auto_score` | Automated points earned |
+| `auto_points_possible` | Total automated points available |
+| `manual_points_available` | Points reserved for instructor review |
+| `final_points_possible` | Total points on rubric |
+| `passed_checks` | Count of passed checks |
+| `failed_checks` | Count of failed checks |
+| `manual_checks` | Count of manual-review checks |
+| `status` | `success` or `error` |
+| `error_message` | Error details (empty on success) |
+| `report_path` | Path to per-submission report directory |
+
+### summary.json
+
+Aggregate statistics for the batch:
+
+```json
+{
+  "total_submissions": 30,
+  "successful_submissions": 28,
+  "failed_submissions": 2,
+  "average_auto_score": 54.3,
+  "median_auto_score": 57.0,
+  "highest_auto_score": 70.0,
+  "lowest_auto_score": 20.0,
+  "pass_rate": 0.714
+}
+```
+
+### instructor_summary.md
+
+A human-readable dashboard for the instructor:
+
+- **Assignment Summary** – total, average, median, high, low scores
+- **Common Failed Checks** – ranked list of which checks failed most
+- **Manual Review Required** – submissions with manual-review items
+- **Grading Warnings** – submissions with extraction or plugin failures
+
+## Batch Grading Workflow
+
+```bash
+# 1. Grade entire class directory
+python -m grader.main \
+  --assignment assignments/databases-assignment-01 \
+  --submission-dir submissions/databases-assignment-01 \
+  --output-dir reports
+
+# 2. Open the instructor dashboard
+open reports/databases-assignment-01/instructor_summary.md
+
+# 3. Open gradebook for export to LMS
+open reports/databases-assignment-01/gradebook.csv
+
+# 4. Review each submission's review form
+open reports/databases-assignment-01/student1/review_form.md
+```
+
+The batch grader:
+- Recursively discovers all supported file types (`.txt`, `.docx`, `.pdf`,
+  `.zip`, `.pptx`, `.xlsx`) under the submission directory
+- Grades each submission independently
+- Never aborts the entire batch because one submission fails
+- Logs individual failures with full error messages
 
 ## Running the Demo
 
-The repository ships with a complete end-to-end demo that exercises every part
-of the grading pipeline before you create real course assignments.
-
-### What the demo includes
-
-| Path | Description |
-|---|---|
-| `assignments/demo-assignment/rubric.yaml` | 100-point rubric covering all built-in check types |
-| `assignments/demo-assignment/notes.md` | Instructor notes explaining the rubric |
-| `submissions/excellent_submission.docx` | Passes every automated check (70/70) |
-| `submissions/passing_submission.docx` | Passes heading and word-count checks (45/70) |
-| `submissions/failing_submission.docx` | Passes only the citation check (5/70) |
-| `scripts/run_demo.py` | Grades all three submissions and prints a summary |
-| `tests/test_demo.py` | Automated validation of the demo pipeline |
+The repository ships with a complete end-to-end demo.
 
 ### Running the demo script
 
@@ -117,7 +329,7 @@ of the grading pipeline before you create real course assignments.
 python scripts/run_demo.py
 ```
 
-Expected output (scores printed to stdout):
+Expected output:
 
 ```
 Submission                          Score (automated)
@@ -130,59 +342,18 @@ Note: 30 manual-review points are excluded from the score above.
       An instructor must award those points after reviewing each submission.
 ```
 
-### Generated files
-
-After running the script, per-submission reports are written under
-`reports/demo/<submission_stem>/`:
-
-```
-reports/demo/
-├── excellent_submission/
-│   ├── report.json
-│   └── report.md
-├── passing_submission/
-│   ├── report.json
-│   └── report.md
-└── failing_submission/
-    ├── report.json
-    └── report.md
-```
-
-### How the scoring works
-
-The demo rubric awards points across six checks:
-
-| Check | Type | Points |
-|---|---|---|
-| `min_word_count` | `word_count` | 15 |
-| `has_introduction_heading` | `heading_exists` | 15 |
-| `has_reflection_heading` | `heading_exists` | 15 |
-| `required_database_terms` | `required_terms` | 20 |
-| `has_citations` | `citation_count` | 5 |
-| `instructor_manual_review` | `manual` | 30 |
-
-The first five checks are fully automated; the last one is flagged for
-instructor review.  The automated maximum is therefore **70 points**.
-
-### Why manual-review points are not automatically awarded
-
-The `manual` check type is a deliberate placeholder.  It always returns
-`passed=False` and `earned_points=0` during automated grading because the
-grading engine has no way to evaluate subjective criteria such as writing
-quality, originality, or depth of argument.  An instructor reads the
-submission and enters the earned points separately.  The check appears in the
-report under **Manual review items** so that instructors know exactly where
-to record their feedback.
-
-### Running the demo tests
+### Running the tests
 
 ```bash
-python -m pytest tests/test_demo.py -v
+python -m pytest tests/ -v
 ```
 
 ## Extending with new checks
 
-1. Add a deterministic check implementation in `grader/checks/` for framework-level checks, or
-2. Add assignment-local plugins under `assignments/<assignment-id>/checks/` for custom logic.
+1. Add a deterministic check implementation in `grader/checks/` for
+   framework-level checks, or
+2. Add assignment-local plugins under `assignments/<assignment-id>/checks/`
+   for custom logic.
 
 No machine learning or LLM integration is used.
+

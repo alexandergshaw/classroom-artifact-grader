@@ -1,0 +1,13 @@
+# feedback_rules.yaml – Assignment-specific feedback overrides for databases-assignment-01.
+#
+# Overrides messages from the global templates/feedback_rules.yaml for check
+# types used in this assignment.
+
+erd_mentioned:
+  fail: "Your submission should include a discussion of an Entity-Relationship Diagram (ERD)."
+
+required_terms:
+  fail: "Key database concepts (normalization, primary key, foreign key, relationship) must be addressed."
+
+word_count:
+  fail: "Your submission is too short. Please expand your analysis to at least 400 words."

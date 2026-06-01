@@ -25,7 +25,8 @@ def test_report_generation_writes_json_and_markdown(tmp_path: Path) -> None:
         instructor_notes="",
     )
 
-    json_path, md_path = write_report(report, tmp_path, Path("templates/report_template.md"))
+    json_path, md_path, review_path = write_report(report, tmp_path, Path("templates/report_template.md"))
     assert json_path.exists()
     assert md_path.exists()
+    assert review_path.exists()
     assert "Total Score: 5.0 / 10.0" in md_path.read_text(encoding="utf-8")
