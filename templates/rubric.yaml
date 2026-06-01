@@ -1,0 +1,35 @@
+assignment_id: database-reflection-01
+points_possible: 100
+
+submission_types:
+  - pdf
+  - docx
+
+checks:
+  - id: word_count
+    type: word_count
+    min: 500
+    points: 15
+
+  - id: required_terms
+    type: required_terms
+    terms:
+      - normalization
+      - primary key
+      - foreign key
+      - relationship
+    points: 20
+
+  - id: heading_exists
+    type: heading_exists
+    heading: Reflection
+    points: 10
+
+  - id: citations
+    type: citation_count
+    min: 2
+    points: 15
+
+  - id: manual_review
+    type: manual
+    points: 40
